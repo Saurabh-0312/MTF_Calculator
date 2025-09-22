@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MTF Leverage Calculator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Base styles */
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f0f2f5; /* Light mode background */
+        transition: background-color 0.3s ease; /* Smooth transition for background */
+      }
+      .calculator-card {
+        background-color: #f8fafc; /* Lighter card background */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 16px;
+        border: 2px solid #a5b4fc; /* Indigo-200 border */
+        transition: background-color 0.3s ease, box-shadow 0.3s ease,
+          border-color 0.3s;
+      }
+      .input-field,
+      .output-field {
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 1rem;
+        color: #333;
+        transition: background-color 0.3s ease, color 0.3s ease,
+          border-color 0.3s ease;
+      }
+      .input-field {
+        border: 1.5px solid #a7f3d0; /* Green-200 */
+        background-color: #f0fdf4; /* Green-50 */
+      }
+      .input-field:focus {
+        outline: none;
+        border-color: #6366f1; /* Indigo-500 for focus */
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+        background-color: #e0e7ff; /* Indigo-100 */
+      }
+      .output-field {
+        border: 1.5px solid #fcd34d; /* Yellow-300 */
+      }
+      .calculate-button {
+        background: linear-gradient(
+          to right,
+          #6366f1,
+          #8b5cf6
+        ); /* Indigo to Violet gradient */
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        border-radius: 12px;
+      }
+      .calculate-button:hover {
+        opacity: 0.9;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+      }
+      .label-text {
+        font-weight: 500;
+        color: #6366f1; /* Indigo-500 for labels */
+        transition: color 0.3s ease;
+      }
+      .result-value {
+        font-weight: 600;
+        color: #1a202c; /* Very dark gray for values */
+        transition: color 0.3s ease;
+      }
+      /* Add more vibrant backgrounds for result fields in light mode */
+      #investAmount {
+        background-color: #dbeafe; /* Blue-100 */
+        color: #2563eb; /* Blue-600 */
+        border: 1.5px solid #60a5fa; /* Blue-400 */
+      }
+      #leveragedInvestment {
+        background-color: #dcfce7; /* Green-100 */
+        color: #059669; /* Green-600 */
+        border: 1.5px solid #34d399; /* Green-400 */
+      }
+      #bufferAmount {
+        background-color: #fef9c3; /* Yellow-100 */
+        color: #b45309; /* Yellow-700 */
+        border: 1.5px solid #fde68a; /* Yellow-300 */
+      }
+
+      /* Dark mode styles */
+      body.dark {
+        background-color: #1a202c; /* Dark background */
+      }
+      body.dark .calculator-card {
+        background-color: #2d3748; /* Darker card background */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+      body.dark .label-text {
+        color: #a0aec0; /* Light gray for labels in dark mode */
+      }
+      body.dark .input-field,
+      body.dark .output-field {
+        background-color: #4a5568; /* Darker input/output background */
+        color: #e2e8f0; /* Lighter text for inputs/outputs */
+        border-color: #616e7f; /* Slightly lighter border */
+      }
+      body.dark .input-field:focus {
+        border-color: #818cf8; /* Lighter indigo for focus */
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25);
+      }
+      body.dark .result-value {
+        color: #f7fafc; /* White text for result values in dark mode */
+      }
+      body.dark #investAmount {
+        background-color: #2b6cb0; /* Darker blue for invest amount */
+        color: #f7fafc;
+      }
+      body.dark #leveragedInvestment {
+        background-color: #38a169; /* Darker green for leveraged investment */
+        color: #f7fafc;
+      }
+      body.dark #bufferAmount {
+        background-color: #d69e2e; /* Darker yellow for buffer amount */
+        color: #f7fafc;
+      }
+
+      /* Dark mode toggle button styles */
+      .dark-mode-toggle {
+        background-color: #e2e8f0; /* Light button for light mode */
+        color: #2d3748;
+        border-radius: 9999px; /* Fully rounded */
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s ease, color 0.3s ease,
+          transform 0.2s ease;
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        z-index: 10;
+      }
+      .dark-mode-toggle:hover {
+        transform: scale(1.05);
+      }
+      body.dark .dark-mode-toggle {
+        background-color: #4a5568; /* Dark button for dark mode */
+        color: #e2e8f0;
+      }
+    </style>
+  </head>
+  <body class="flex items-center justify-center min-h-screen p-4 sm:p-6">
+    <div class="calculator-card w-full max-w-lg p-6 sm:p-8 md:p-10 relative">
+      <!-- Dark Mode Toggle Button -->
+      <button
+        id="darkModeToggle"
+        class="dark-mode-toggle"
+        onclick="toggleDarkMode()"
+      >
+        Toggle Dark Mode
+      </button>
+
+      <h1
+        class="text-3xl sm:text-4xl font-bold text-center mb-6 sm:mb-8"
+        style="color: #8b5cf6"
+      >
+        MTF Leverage Calculator
+      </h1>
+
+      <div class="space-y-6">
+        <!-- Input Field: Total Available Money -->
+        <div>
+          <label
+            for="totalMoney"
+            class="label-text block mb-2 text-lg"
+            style="color: #2563eb"
+            >Total Available Money (₹)</label
+          >
+          <input
+            type="number"
+            id="totalMoney"
+            placeholder="e.g., 100000"
+            class="input-field w-full border border-gray-300"
+            min="0"
+            step="any"
+            oninput="calculateMTF()"
+          />
+        </div>
+
+        <!-- Input Field: Leverage Factor -->
+        <div>
+          <label
+            for="leverageFactor"
+            class="label-text block mb-2 text-lg"
+            style="color: #059669"
+            >Leverage Factor (e.g., 4)</label
+          >
+          <input
+            type="number"
+            id="leverageFactor"
+            value="4"
+            class="input-field w-full border border-gray-300"
+            min="1"
+            step="0.5"
+            oninput="calculateMTF()"
+          />
+        </div>
+
+        <!-- Input Field: Percentage of Protection -->
+        <div>
+          <label
+            for="protectionPercentage"
+            class="label-text block mb-2 text-lg"
+            style="color: #b45309"
+            >Protection Percentage (e.g., 10 for 10%)</label
+          >
+          <input
+            type="number"
+            id="protectionPercentage"
+            value="10"
+            class="input-field w-full border border-gray-300"
+            min="0"
+            max="100"
+            step="0.1"
+            oninput="calculateMTF()"
+          />
+        </div>
+
+        <!-- Output Field: Amount to Invest -->
+        <div class="border-t border-gray-200 pt-6 dark:border-gray-600">
+          <p class="label-text text-lg mb-2">Amount to Invest (₹)</p>
+          <div
+            id="investAmount"
+            class="output-field bg-blue-50 text-blue-800 result-value"
+          >
+            0.00
+          </div>
+        </div>
+
+        <!-- Output Field: Leveraged Investment -->
+        <div>
+          <p class="label-text text-lg mb-2">Leveraged Investment (₹)</p>
+          <div
+            id="leveragedInvestment"
+            class="output-field bg-green-50 text-green-800 result-value"
+          >
+            0.00
+          </div>
+        </div>
+
+        <!-- Output Field: Buffer Amount -->
+        <div>
+          <p class="label-text text-lg mb-2">
+            Buffer Amount for Protection (₹)
+          </p>
+          <div
+            id="bufferAmount"
+            class="output-field bg-yellow-50 text-yellow-800 result-value"
+          >
+            0.00
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+        <p>
+          *Calculations based on your specified leverage and protection
+          percentage.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      /**
+       * Toggles dark mode on and off.
+       * Stores the preference in local storage.
+       */
+      function toggleDarkMode() {
+        const body = document.body;
+        body.classList.toggle("dark"); // Toggle the 'dark' class on the body
+
+        // Save the user's preference to local storage
+        if (body.classList.contains("dark")) {
+          localStorage.setItem("theme", "dark");
+        } else {
+          localStorage.setItem("theme", "light");
+        }
+      }
+
+      /**
+       * Applies the theme saved in local storage on page load.
+       */
+      function applySavedTheme() {
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme === "dark") {
+          document.body.classList.add("dark");
+        } else {
+          // Default to light mode if no preference or 'light' is saved
+          document.body.classList.remove("dark");
+        }
+      }
+
+      /**
+       * Calculates the MTF investment details based on the total available money,
+       * user-defined leverage factor, and protection percentage.
+       *
+       * The core logic is derived from:
+       * X = Total Available Money
+       * I = Amount to Invest (cash portion)
+       * L = Leveraged Investment = I * Leverage Factor
+       * B = Buffer Amount = (Protection Percentage / 100) * L
+       *
+       * We know that X = I + B
+       * Substitute B: X = I + ((Protection Percentage / 100) * L)
+       * Substitute L: X = I + ((Protection Percentage / 100) * (I * Leverage Factor))
+       * X = I + (I * Leverage Factor * Protection Percentage / 100)
+       * X = I * (1 + (Leverage Factor * Protection Percentage / 100))
+       *
+       * Therefore, I = X / (1 + (Leverage Factor * Protection Percentage / 100))
+       * Once I is found, L and B can be calculated.
+       */
+      function calculateMTF() {
+        const totalMoneyInput = document.getElementById("totalMoney");
+        const leverageFactorInput = document.getElementById("leverageFactor");
+        const protectionPercentageInput = document.getElementById(
+          "protectionPercentage"
+        );
+
+        const investAmountDiv = document.getElementById("investAmount");
+        const leveragedInvestmentDiv = document.getElementById(
+          "leveragedInvestment"
+        );
+        const bufferAmountDiv = document.getElementById("bufferAmount");
+
+        // Get user inputs and parse them
+        let totalMoney = parseFloat(totalMoneyInput.value);
+        let leverageFactor = parseFloat(leverageFactorInput.value);
+        let protectionPercentage = parseFloat(protectionPercentageInput.value);
+
+        // --- Input Validation ---
+        let isValid = true;
+
+        // Validate Total Money
+        if (isNaN(totalMoney) || totalMoney < 0) {
+          totalMoney = 0; // Treat as 0 for calculation if invalid
+          isValid = false;
+        }
+
+        // Validate Leverage Factor
+        if (isNaN(leverageFactor) || leverageFactor < 1) {
+          leverageFactor = 1; // Default to 1 if invalid
+          // Note: Not setting input.value here to avoid overriding user input immediately
+        }
+
+        // Validate Protection Percentage
+        if (
+          isNaN(protectionPercentage) ||
+          protectionPercentage < 0 ||
+          protectionPercentage > 100
+        ) {
+          protectionPercentage = 0; // Default to 0% if invalid
+          // Note: Not setting input.value here to avoid overriding user input immediately
+        }
+
+        // Convert percentage to a decimal for calculation (e.g., 10% -> 0.10)
+        const bufferDecimal = protectionPercentage / 100;
+
+        let amountToInvest = 0;
+        let leveragedInvestment = 0;
+        let bufferAmount = 0;
+
+        // Ensure denominator is not zero or negative for valid calculation
+        const denominator = 1 + leverageFactor * bufferDecimal;
+        if (isValid && denominator > 0) {
+          // Calculate the actual amount to invest (I)
+          // I = X / (1 + (Leverage Factor * Buffer Decimal))
+          amountToInvest = totalMoney / denominator;
+
+          // Calculate the leveraged investment amount
+          leveragedInvestment = amountToInvest * leverageFactor;
+
+          // Calculate the buffer amount
+          // bufferAmount = totalMoney - amountToInvest;
+          // Using the derived formula for consistency and to avoid potential floating point issues
+          bufferAmount = leveragedInvestment * bufferDecimal;
+        }
+
+        // Update the display fields with formatted results
+        // Using toLocaleString for Indian Rupee format with 2 decimal places
+        investAmountDiv.textContent = amountToInvest.toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        leveragedInvestmentDiv.textContent = leveragedInvestment.toLocaleString(
+          "en-IN",
+          {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }
+        );
+        bufferAmountDiv.textContent = bufferAmount.toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+      }
+
+      // Initialize the calculator and apply saved theme on page load
+      window.onload = function () {
+        applySavedTheme(); // Apply dark/light theme based on saved preference
+        calculateMTF(); // Perform initial calculation with default values
+      };
+    </script>
+  </body>
+</html>
